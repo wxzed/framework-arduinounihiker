@@ -5,7 +5,8 @@
   "keywords": [
     "framework",
     "arduino",
-    "unihiker"
+    "espressif",
+    "esp32"
   ],
   "license": "LGPL-2.1-or-later",
   "repository": {

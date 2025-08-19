@@ -47,7 +47,7 @@ bool Preferences::begin(const char * name, bool readOnly, const char* partition_
         err = nvs_open(name, readOnly ? NVS_READONLY : NVS_READWRITE, &_handle);
     }
     if(err){
-        log_e("nvs_open failed:name=%s ,%s", name,nvs_error(err));
+        log_e("nvs_open failed: %s", nvs_error(err));
         return false;
     }
     _started = true;

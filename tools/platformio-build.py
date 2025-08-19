@@ -36,7 +36,6 @@ partitions_name = board_config.get(
     "build.partitions", board_config.get("build.arduino.partitions", "")
 )
 
-# 使用当前包的目录而不是依赖外部包
 FRAMEWORK_DIR = platform.get_package_dir("framework-arduinounihiker")
 assert isdir(FRAMEWORK_DIR)
 
@@ -71,7 +70,7 @@ def get_partition_table_csv(variants_dir):
 
 def get_bootloader_image(variants_dir):
     bootloader_image_file = "bootloader.bin"
-    if partitions_name.endswith("tinyuf2.csv") or board_config.get("build.variant", "") == "unihiker_k10":
+    if partitions_name.endswith("tinyuf2.csv"):
         bootloader_image_file = "bootloader-tinyuf2.bin"
 
     variant_bootloader = join(
