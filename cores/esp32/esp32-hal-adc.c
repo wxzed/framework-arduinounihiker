@@ -149,7 +149,7 @@ void __analogReadResolution(uint8_t bits)
 #endif
 }
 
-uint16_t __analogReadRaw(uint8_t pin)
+uint16_t __analogRead(uint8_t pin)
 {
     int8_t channel = digitalPinToAnalogChannel(pin);
     int value = 0;
@@ -173,14 +173,8 @@ uint16_t __analogReadRaw(uint8_t pin)
         }
     } else {
         value = adc1_get_raw(channel);
-        return value;
+        return mapResolution(value);
     }
-    return value;
-}
-
-uint16_t __analogRead(uint8_t pin)
-{
-    uint16_t value = __analogReadRaw(pin);
     return mapResolution(value);
 }
 
@@ -207,7 +201,7 @@ uint32_t __analogReadMilliVolts(uint8_t pin){
             if(__analogVRefPin){
                 esp_adc_cal_characteristics_t chars;
                 if(adc_vref_to_gpio(ADC_UNIT_2, __analogVRefPin) == ESP_OK){
-                    __analogVRef = __analogReadRaw(__analogVRefPin);
+                    __analogVRef = __analogRead(__analogVRefPin);
                     esp_adc_cal_characterize(1, __analogAttenuation, __analogWidth, DEFAULT_VREF, &chars);
                     __analogVRef = esp_adc_cal_raw_to_voltage(__analogVRef, &chars);
                     log_d("Vref to GPIO%u: %u", __analogVRefPin, __analogVRef);
@@ -221,7 +215,7 @@ uint32_t __analogReadMilliVolts(uint8_t pin){
         unit = 2;
     }
 
-    uint16_t adc_reading = __analogReadRaw(pin);
+    uint16_t adc_reading = __analogRead(pin);
 
     uint8_t atten = __analogAttenuation;
     if (__pin_attenuation[pin] != ADC_ATTENDB_MAX){
@@ -272,7 +266,6 @@ int __hallRead()    //hall sensor using idf read
 #endif
 
 extern uint16_t analogRead(uint8_t pin) __attribute__ ((weak, alias("__analogRead")));
-extern uint16_t analogReadRaw(uint8_t pin) __attribute__ ((weak, alias("__analogReadRaw")));
 extern uint32_t analogReadMilliVolts(uint8_t pin) __attribute__ ((weak, alias("__analogReadMilliVolts")));
 extern void analogReadResolution(uint8_t bits) __attribute__ ((weak, alias("__analogReadResolution")));
 extern void analogSetClockDiv(uint8_t clockDiv) __attribute__ ((weak, alias("__analogSetClockDiv")));

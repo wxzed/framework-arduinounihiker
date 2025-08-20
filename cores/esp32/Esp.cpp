@@ -59,11 +59,10 @@ extern "C" {
 // REG_SPI_BASE is not defined for S3/C3 ??
 
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
-#ifdef REG_SPI_BASE
-#undef REG_SPI_BASE
-#endif  // REG_SPI_BASE
-#define REG_SPI_BASE(i) (DR_REG_SPI1_BASE + (((i) > 1) ? (((i) * 0x1000) + 0x20000) : (((~(i)) & 1) * 0x1000)))
-#endif  // TARGET
+  #ifndef REG_SPI_BASE
+  #define REG_SPI_BASE(i)     (DR_REG_SPI1_BASE + (((i)>1) ? (((i)* 0x1000) + 0x20000) : (((~(i)) & 1)* 0x1000 )))
+  #endif // REG_SPI_BASE
+#endif // TARGET
 
 /**
  * User-defined Literals
@@ -120,7 +119,7 @@ unsigned long long operator"" _GB(unsigned long long x)
 
 EspClass ESP;
 
-void EspClass::deepSleep(uint64_t time_us)
+void EspClass::deepSleep(uint32_t time_us)
 {
     esp_deep_sleep(time_us);
 }
@@ -241,10 +240,6 @@ String EspClass::getSketchMD5()
         md5.add(buf.get(), readBytes);
         lengthLeft -= readBytes;
         offset += readBytes;
-
-        #if CONFIG_FREERTOS_UNICORE
-        delay(1);  // Fix solo WDT
-        #endif
     }
     md5.calculate();
     result = md5.toString();

@@ -90,7 +90,14 @@ esp_err_t i2cInit(uint8_t i2c_num, int8_t sda, int8_t scl, uint32_t frequency){
         ret = i2c_driver_install((i2c_port_t)i2c_num, conf.mode, 0, 0, 0);
         if (ret != ESP_OK) {
             log_e("i2c_driver_install failed");
-        } else {
+            if(ret == 40){
+                bus[i2c_num].initialized = true;
+                bus[i2c_num].frequency = frequency;
+                //Clock Stretching Timeout: 20b:esp32, 5b:esp32-c3, 24b:esp32-s2
+                i2c_set_timeout((i2c_port_t)i2c_num, I2C_LL_MAX_TIMEOUT);
+                ret = ESP_OK;
+            }
+        }else{
             bus[i2c_num].initialized = true;
             bus[i2c_num].frequency = frequency;
             //Clock Stretching Timeout: 20b:esp32, 5b:esp32-c3, 24b:esp32-s2

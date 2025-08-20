@@ -61,7 +61,6 @@ void loop()
 
     // Wait for data
     xEventGroupWaitBits(events, RMT_FLAG_RX_DONE, 1, 1, portMAX_DELAY);
-
     // Printout the received data plus the original values
     for (i=0; i<60; i++)
     {

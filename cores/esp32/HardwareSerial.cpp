@@ -22,14 +22,78 @@
 #define ARDUINO_SERIAL_EVENT_TASK_RUNNING_CORE -1
 #endif
 
+#ifndef SOC_RX0
+#if CONFIG_IDF_TARGET_ESP32
+#define SOC_RX0 3
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#define SOC_RX0 44
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define SOC_RX0 20
+#endif
+#endif
+
+#ifndef SOC_TX0
+#if CONFIG_IDF_TARGET_ESP32
+#define SOC_TX0 1
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#define SOC_TX0 43
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define SOC_TX0 21
+#endif
+#endif
+
 void serialEvent(void) __attribute__((weak));
+void serialEvent(void) {}
 
 #if SOC_UART_NUM > 1
+
+#ifndef RX1
+#if CONFIG_IDF_TARGET_ESP32
+#define RX1 9
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define RX1 18
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define RX1 18
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define RX1 15
+#endif
+#endif
+
+#ifndef TX1
+#if CONFIG_IDF_TARGET_ESP32
+#define TX1 10
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define TX1 17
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define TX1 19
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define TX1 16
+#endif
+#endif
+
 void serialEvent1(void) __attribute__((weak));
+void serialEvent1(void) {}
 #endif /* SOC_UART_NUM > 1 */
 
 #if SOC_UART_NUM > 2
+#ifndef RX2
+#if CONFIG_IDF_TARGET_ESP32
+#define RX2 16
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define RX2 19 
+#endif
+#endif
+
+#ifndef TX2
+#if CONFIG_IDF_TARGET_ESP32
+#define TX2 17
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define TX2 20
+#endif
+#endif
+
 void serialEvent2(void) __attribute__((weak));
+void serialEvent2(void) {}
 #endif /* SOC_UART_NUM > 2 */
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_SERIAL)
@@ -47,13 +111,16 @@ HardwareSerial Serial2(2);
 
 void serialEventRun(void)
 {
-    // UART0 is default serialEvent()
-    if(serialEvent && Serial.available()) serialEvent();
+#if ARDUINO_USB_CDC_ON_BOOT //Serial used for USB CDC
+    if(Serial0.available()) serialEvent();
+#else
+    if(Serial.available()) serialEvent();
+#endif
 #if SOC_UART_NUM > 1
-    if(serialEvent1 && Serial1.available()) serialEvent1();
+    if(Serial1.available()) serialEvent1();
 #endif
 #if SOC_UART_NUM > 2
-    if(serialEvent2 && Serial2.available()) serialEvent2();
+    if(Serial2.available()) serialEvent2();
 #endif
 }
 #endif
@@ -62,16 +129,16 @@ void serialEventRun(void)
 #define HSERIAL_MUTEX_LOCK()    do {} while (xSemaphoreTake(_lock, portMAX_DELAY) != pdPASS)
 #define HSERIAL_MUTEX_UNLOCK()  xSemaphoreGive(_lock)
 #else
-#define HSERIAL_MUTEX_LOCK()
-#define HSERIAL_MUTEX_UNLOCK()
+#define HSERIAL_MUTEX_LOCK()    
+#define HSERIAL_MUTEX_UNLOCK()  
 #endif
 
-HardwareSerial::HardwareSerial(uint8_t uart_nr) :
-_uart_nr(uart_nr),
+HardwareSerial::HardwareSerial(uint8_t uart_nr) : 
+_uart_nr(uart_nr), 
 _uart(NULL),
 _rxBufferSize(256),
-_txBufferSize(0),
-_onReceiveCB(NULL),
+_txBufferSize(0), 
+_onReceiveCB(NULL), 
 _onReceiveErrorCB(NULL),
 _onReceiveTimeout(false),
 _rxTimeout(2),
@@ -80,6 +147,8 @@ _eventTask(NULL)
 #if !CONFIG_DISABLE_HAL_LOCKS
     ,_lock(NULL)
 #endif
+,_ctsPin(-1)
+,_rtsPin(-1)
 {
 #if !CONFIG_DISABLE_HAL_LOCKS
     if(_lock == NULL){
@@ -90,13 +159,19 @@ _eventTask(NULL)
         }
     }
 #endif
-    // do the same as boot time, that will set default UART0 pins RX, TX. 
-    if(uart_nr == 0) uartSetPins(0, SOC_RX0, SOC_TX0, -1, -1);
+    // sets UART0 (default console) RX/TX pins as already configured in boot
+    if (uart_nr == 0) {    
+        _rxPin = SOC_RX0;
+        _txPin = SOC_TX0;
+    } else {
+        _rxPin = -1;
+        _txPin = -1;
+    }
 }
 
 HardwareSerial::~HardwareSerial()
 {
-    end(); // explicit Full UART termination
+    end();
 #if !CONFIG_DISABLE_HAL_LOCKS
     if(_lock != NULL){
         vSemaphoreDelete(_lock);
@@ -122,10 +197,10 @@ void HardwareSerial::_destroyEventTask(void)
     }
 }
 
-void HardwareSerial::onReceiveError(OnReceiveErrorCb function)
+void HardwareSerial::onReceiveError(OnReceiveErrorCb function) 
 {
     HSERIAL_MUTEX_LOCK();
-    // function may be NULL to cancel onReceive() from its respective task
+    // function may be NULL to cancel onReceive() from its respective task 
     _onReceiveErrorCB = function;
     // this can be called after Serial.begin(), therefore it shall create the event task
     if (function != NULL && _uart != NULL && _eventTask == NULL) {
@@ -137,7 +212,7 @@ void HardwareSerial::onReceiveError(OnReceiveErrorCb function)
 void HardwareSerial::onReceive(OnReceiveCb function, bool onlyOnTimeout)
 {
     HSERIAL_MUTEX_LOCK();
-    // function may be NULL to cancel onReceive() from its respective task
+    // function may be NULL to cancel onReceive() from its respective task 
     _onReceiveCB = function;
 
     // setting the callback to NULL will just disable it
@@ -185,14 +260,14 @@ bool HardwareSerial::setRxFIFOFull(uint8_t fifoBytes)
 bool HardwareSerial::setRxTimeout(uint8_t symbols_timeout)
 {
     HSERIAL_MUTEX_LOCK();
-
+    
     // Zero disables timeout, thus, onReceive callback will only be called when RX FIFO reaches 120 bytes
-    // Any non-zero value will activate onReceive callback based on UART baudrate with about 11 bits per symbol
-    _rxTimeout = symbols_timeout;
-    if (!symbols_timeout) _onReceiveTimeout = false;  // only when RX timeout is disabled, we also must disable this flag
+    // Any non-zero value will activate onReceive callback based on UART baudrate with about 11 bits per symbol 
+    _rxTimeout = symbols_timeout;   
+    if (!symbols_timeout) _onReceiveTimeout = false;  // only when RX timeout is disabled, we also must disable this flag 
 
     bool retCode = uartSetRxTimeout(_uart, _rxTimeout); // Set new timeout
-
+    
     HSERIAL_MUTEX_UNLOCK();
     return retCode;
 }
@@ -201,7 +276,7 @@ void HardwareSerial::eventQueueReset()
 {
     QueueHandle_t uartEventQueue = NULL;
     if (_uart == NULL) {
-        return;
+	    return;
     }
     uartGetEventQueue(_uart, &uartEventQueue);
     if (uartEventQueue != NULL) {
@@ -218,12 +293,12 @@ void HardwareSerial::_uartEventTask(void *args)
     if (uartEventQueue != NULL) {
         for(;;) {
             //Waiting for UART event.
-            if(xQueueReceive(uartEventQueue, (void * )&event, (TickType_t)portMAX_DELAY)) {
+            if(xQueueReceive(uartEventQueue, (void * )&event, (portTickType)portMAX_DELAY)) {
                 hardwareSerial_error_t currentErr = UART_NO_ERROR;
                 switch(event.type) {
                     case UART_DATA:
-                        if(uart->_onReceiveCB && uart->available() > 0 &&
-                            ((uart->_onReceiveTimeout && event.timeout_flag) || !uart->_onReceiveTimeout) )
+                        if(uart->_onReceiveCB && uart->available() > 0 && 
+                            ((uart->_onReceiveTimeout && event.timeout_flag) || !uart->_onReceiveTimeout) ) 
                                 uart->_onReceiveCB();
                         break;
                     case UART_FIFO_OVF:
@@ -235,19 +310,19 @@ void HardwareSerial::_uartEventTask(void *args)
                         currentErr = UART_BUFFER_FULL_ERROR;
                         break;
                     case UART_BREAK:
-                        log_v("UART%d RX break.", uart->_uart_nr);
+                        log_w("UART%d RX break.", uart->_uart_nr);
                         currentErr = UART_BREAK_ERROR;
                         break;
                     case UART_PARITY_ERR:
-                        log_v("UART%d parity error.", uart->_uart_nr);
+                        log_w("UART%d parity error.", uart->_uart_nr);
                         currentErr = UART_PARITY_ERROR;
                         break;
                     case UART_FRAME_ERR:
-                        log_v("UART%d frame error.", uart->_uart_nr);
+                        log_w("UART%d frame error.", uart->_uart_nr);
                         currentErr = UART_FRAME_ERROR;
                         break;
                     default:
-                        log_v("UART%d unknown event type %d.", uart->_uart_nr, event.type);
+                        log_w("UART%d unknown event type %d.", uart->_uart_nr, event.type);
                         break;
                 }
                 if (currentErr != UART_NO_ERROR) {
@@ -262,7 +337,7 @@ void HardwareSerial::_uartEventTask(void *args)
 void HardwareSerial::begin(unsigned long baud, uint32_t config, int8_t rxPin, int8_t txPin, bool invert, unsigned long timeout_ms, uint8_t rxfifo_full_thrhd)
 {
     if(_uart_nr >= SOC_UART_NUM) {
-        log_e("Serial number is invalid, please use a number from 0 to %u", SOC_UART_NUM - 1);
+        log_e("Serial number is invalid, please use numers from 0 to %u", SOC_UART_NUM - 1);
         return;
     }
 
@@ -273,30 +348,23 @@ void HardwareSerial::begin(unsigned long baud, uint32_t config, int8_t rxPin, in
     }
 #endif
 
-    // map logical pins to GPIO numbers
-    rxPin = digitalPinToGPIONumber(rxPin);
-    txPin = digitalPinToGPIONumber(txPin);
-
     HSERIAL_MUTEX_LOCK();
     // First Time or after end() --> set default Pins
     if (!uartIsDriverInstalled(_uart)) {
-        // get previously used RX/TX pins, if any.
-        int8_t _rxPin = uart_get_RxPin(_uart_nr);
-        int8_t _txPin = uart_get_TxPin(_uart_nr);
         switch (_uart_nr) {
             case UART_NUM_0:
                 if (rxPin < 0 && txPin < 0) {
                     // do not change RX0/TX0 if it has already been set before
-                    rxPin = _rxPin < 0 ? (int8_t)SOC_RX0 : _rxPin;
-                    txPin = _txPin < 0 ? (int8_t)SOC_TX0 : _txPin;
+                    rxPin = _rxPin < 0 ? SOC_RX0 : _rxPin;
+                    txPin = _txPin < 0 ? SOC_TX0 : _txPin;
                 }
             break;
 #if SOC_UART_NUM > 1                   // may save some flash bytes...
             case UART_NUM_1:
                if (rxPin < 0 && txPin < 0) {
                     // do not change RX1/TX1 if it has already been set before
-                    rxPin = _rxPin < 0 ? (int8_t)RX1 : _rxPin;
-                    txPin = _txPin < 0 ? (int8_t)TX1 : _txPin;
+                    rxPin = _rxPin < 0 ? RX1 : _rxPin;
+                    txPin = _txPin < 0 ? TX1 : _txPin;
                 }
             break;
 #endif
@@ -304,30 +372,26 @@ void HardwareSerial::begin(unsigned long baud, uint32_t config, int8_t rxPin, in
             case UART_NUM_2:
                if (rxPin < 0 && txPin < 0) {
                     // do not change RX2/TX2 if it has already been set before
-                    rxPin = _rxPin < 0 ? (int8_t)RX2 : _rxPin;
-                    txPin = _txPin < 0 ? (int8_t)TX2 : _txPin;
+                    rxPin = _rxPin < 0 ? RX2 : _rxPin;
+                    txPin = _txPin < 0 ? TX2 : _txPin;
                 }
             break;
 #endif
         }
     }
 
-    // IDF UART driver keeps Pin setting on restarting. Negative Pin number will keep it unmodified.
-    // it will detach previous UART attached pins
+    // map logical pins to GPIO numbers
+    rxPin = digitalPinToGPIONumber(rxPin);
+    txPin = digitalPinToGPIONumber(txPin);
 
-    // indicates that uartbegin() has to initilize a new IDF driver
-    if (_testUartBegin(_uart_nr, baud ? baud : 9600, config, rxPin, txPin, _rxBufferSize, _txBufferSize, invert, rxfifo_full_thrhd)) {
-        _destroyEventTask(); // when IDF uart driver must be restarted, _eventTask must finish too
+    if(_uart) {
+        // in this case it is a begin() over a previous begin() - maybe to change baud rate
+        // thus do not disable debug output
+        end(false);
     }
 
     // IDF UART driver keeps Pin setting on restarting. Negative Pin number will keep it unmodified.
-    // it will detach previous UART attached pins
     _uart = uartBegin(_uart_nr, baud ? baud : 9600, config, rxPin, txPin, _rxBufferSize, _txBufferSize, invert, rxfifo_full_thrhd);
-    if (_uart == NULL) {
-        log_e("UART driver failed to start. Please check the logs.");
-        HSERIAL_MUTEX_UNLOCK();
-        return;
-    }
     if (!baud) {
         // using baud rate as zero, forces it to try to detect the current baud rate in place
         uartStartDetectBaudrate(_uart);
@@ -337,20 +401,18 @@ void HardwareSerial::begin(unsigned long baud, uint32_t config, int8_t rxPin, in
             yield();
         }
 
+        end(false);
+
         if(detectedBaudRate) {
             delay(100); // Give some time...
             _uart = uartBegin(_uart_nr, detectedBaudRate, config, rxPin, txPin, _rxBufferSize, _txBufferSize, invert, rxfifo_full_thrhd);
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
-           // S3 and C3 have a limitation and both can't detect a baud rate lower than 9600
-           if (detectedBaudRate == 9600) log_w("The baud detected, as 9600, may be wrong. ESP32-C3 and ESP32-S3 can't detect a baud rate under 9600.");
-#endif
         } else {
             log_e("Could not detect baudrate. Serial data at the port must be present within the timeout for detection to be possible");
             _uart = NULL;
         }
     }
     // create a task to deal with Serial Events when, for example, calling begin() twice to change the baudrate,
-    // or when setting the callback before calling begin()
+    // or when setting the callback before calling begin() 
     if (_uart != NULL && (_onReceiveCB != NULL || _onReceiveErrorCB != NULL) && _eventTask == NULL) {
         _createEventTask(this);
     }
@@ -358,10 +420,10 @@ void HardwareSerial::begin(unsigned long baud, uint32_t config, int8_t rxPin, in
     // Set UART RX timeout
     uartSetRxTimeout(_uart, _rxTimeout);
 
-    // Set UART FIFO Full depending on the baud rate.
+    // Set UART FIFO Full depending on the baud rate. 
     // Lower baud rates will force to emulate byte-by-byte reading
     // Higher baud rates will keep IDF default of 120 bytes for FIFO FULL Interrupt
-    // It can also be changed by the application at any time
+    // It can also be changed by the application at any time 
     if (!_rxFIFOFull) {    // it has not being changed before calling begin()
       //  set a default FIFO Full value for the IDF driver
       uint8_t fifoFull = 1;
@@ -371,28 +433,47 @@ void HardwareSerial::begin(unsigned long baud, uint32_t config, int8_t rxPin, in
       uartSetRxFIFOFull(_uart, fifoFull);
       _rxFIFOFull = fifoFull;
     }
+    // detach previous attached RX/TX pins when it has changed
+    if (_uart != NULL) {
+        if (rxPin >= 0 && rxPin != _rxPin) {
+            uartDetachPins(_uart_nr, _rxPin, -1, -1, -1);
+            _rxPin = rxPin;
+        }
+        if (txPin >= 0 && txPin != _txPin) {
+            uartDetachPins(_uart_nr, -1, _txPin, -1, -1);
+            _txPin = txPin;
+        }        
+    }    
 
     HSERIAL_MUTEX_UNLOCK();
 }
 
 void HardwareSerial::updateBaudRate(unsigned long baud)
 {
-    uartSetBaudRate(_uart, baud);
+	uartSetBaudRate(_uart, baud);
 }
 
-void HardwareSerial::end()
+void HardwareSerial::end(bool fullyTerminate)
 {
-    // default Serial.end() will completely disable HardwareSerial,
+    // default Serial.end() will completely disable HardwareSerial, 
     // including any tasks or debug message channel (log_x()) - but not for IDF log messages!
-    _onReceiveCB = NULL;
-    _onReceiveErrorCB = NULL;
-    if (uartGetDebug() == _uart_nr) {
-        uartSetDebug(0);
+    if(fullyTerminate) {
+        _onReceiveCB = NULL;
+        _onReceiveErrorCB = NULL;
+        if (uartGetDebug() == _uart_nr) {
+            uartSetDebug(0);
+        }
+
+        _rxFIFOFull = 0; 
+
+        uartDetachPins(_uart_nr, _rxPin, _txPin, _ctsPin, _rtsPin);
+        _rxPin = _txPin = _ctsPin = _rtsPin = -1;
+
     }
-    _rxFIFOFull = 0;
-    uartEnd(_uart_nr);  // fully detach all pins and delete the UART driver
-    _destroyEventTask(); // when IDF uart driver is deleted, _eventTask must finish too
-    _uart = NULL;
+
+    uartEnd(_uart);
+    _uart = 0;
+    _destroyEventTask();
 }
 
 void HardwareSerial::setDebugOutput(bool en)
@@ -472,10 +553,10 @@ size_t HardwareSerial::write(const uint8_t *buffer, size_t size)
     uartWriteBuf(_uart, buffer, size);
     return size;
 }
-
 uint32_t  HardwareSerial::baudRate()
+
 {
-    return uartGetBaudRate(_uart);
+	return uartGetBaudRate(_uart);
 }
 HardwareSerial::operator bool() const
 {
@@ -488,7 +569,6 @@ void HardwareSerial::setRxInvert(bool invert)
 }
 
 // negative Pin value will keep it unmodified
-// can be called after or before begin()
 bool HardwareSerial::setPins(int8_t rxPin, int8_t txPin, int8_t ctsPin, int8_t rtsPin)
 {
     // map logical pins to GPIO numbers
@@ -497,59 +577,65 @@ bool HardwareSerial::setPins(int8_t rxPin, int8_t txPin, int8_t ctsPin, int8_t r
     ctsPin = digitalPinToGPIONumber(ctsPin);
     rtsPin = digitalPinToGPIONumber(rtsPin);
 
-    // uartSetPins() checks if pins are valid and, if necessary, detaches the previous ones
-    return uartSetPins(_uart_nr, rxPin, txPin, ctsPin, rtsPin);
+    // uartSetPins() checks if pins are valid for each function and for the SoC
+    bool retCode = uartSetPins(_uart_nr, rxPin, txPin, ctsPin, rtsPin);
+    if (retCode) {
+        // detach previous attached UART pins if not set as same as before
+        if (_rxPin >= 0 && rxPin >= 0 &&_rxPin != rxPin) uartDetachPins(_uart_nr, _rxPin, -1, -1, -1);
+        if (_txPin >= 0 && txPin >= 0 && _txPin != txPin) uartDetachPins(_uart_nr, -1, _txPin, -1, -1);
+        if (_ctsPin >= 0 && ctsPin >= 0 && _ctsPin != ctsPin) uartDetachPins(_uart_nr, -1, -1, _ctsPin, -1);
+        if (_rtsPin >= 0 &&  rtsPin >= 0 &&_rtsPin != rtsPin) uartDetachPins(_uart_nr, -1, -1, -1, _rtsPin);
+        // set new pins for a future end() or a setPins()    
+        _txPin = txPin >= 0 ? txPin : _txPin;
+        _rxPin = rxPin >= 0 ? rxPin : _rxPin;
+        _rtsPin = rtsPin >= 0 ? rtsPin : _rtsPin;
+        _ctsPin = ctsPin >= 0 ? ctsPin : _ctsPin;       
+    } else {
+        log_e("Error when setting Serial port Pins. Invalid Pin.\n");
+    }
+    return retCode;
 }
 
-// Enables or disables Hardware Flow Control using RTS and/or CTS pins 
-// must use setAllPins() in order to set RTS/CTS pins
-// SerialHwFlowCtrl = UART_HW_FLOWCTRL_DISABLE, UART_HW_FLOWCTRL_RTS, 
-//                    UART_HW_FLOWCTRL_CTS, UART_HW_FLOWCTRL_CTS_RTS
-bool HardwareSerial::setHwFlowCtrlMode(SerialHwFlowCtrl mode, uint8_t threshold)
+// Enables or disables Hardware Flow Control using RTS and/or CTS pins (must use setAllPins() before)
+bool HardwareSerial::setHwFlowCtrlMode(uint8_t mode, uint8_t threshold)
 {
     return uartSetHwFlowCtrlMode(_uart, mode, threshold);
 }
 
-// Sets the uart mode in the esp32 uart for use with RS485 modes 
-// HwFlowCtrl must be disabled and RTS pin set
-// SerialMode = UART_MODE_UART, UART_MODE_RS485_HALF_DUPLEX, UART_MODE_IRDA, 
-// or testing mode: UART_MODE_RS485_COLLISION_DETECT, UART_MODE_RS485_APP_CTRL 
-bool HardwareSerial::setMode(SerialMode mode)
+// Sets the uart mode in the esp32 uart for use with RS485 modes (HwFlowCtrl must be disabled and RTS pin set)
+bool HardwareSerial::setMode(uint8_t mode)
 {
     return uartSetMode(_uart, mode);
 }
 
-// minimum total RX Buffer size is the UART FIFO space (128 bytes for most SoC) + 1. IDF imposition.
 size_t HardwareSerial::setRxBufferSize(size_t new_size) {
 
     if (_uart) {
-        log_e("RX Buffer can't be resized when Serial is already running. Set it before calling begin().");
+        log_e("RX Buffer can't be resized when Serial is already running.\n");
         return 0;
     }
 
     if (new_size <= SOC_UART_FIFO_LEN) {
-        log_w("RX Buffer set to minimum value: %d.", SOC_UART_FIFO_LEN + 1);  // ESP32, S2, S3 and C3 means higher than 128
-        new_size = SOC_UART_FIFO_LEN + 1;
+        log_e("RX Buffer must be higher than %d.\n", SOC_UART_FIFO_LEN);  // ESP32, S2, S3 and C3 means higher than 128
+        return 0;
     }
 
     _rxBufferSize = new_size;
     return _rxBufferSize;
 }
 
-// minimum total TX Buffer size is the UART FIFO space (128 bytes for most SoC).
 size_t HardwareSerial::setTxBufferSize(size_t new_size) {
 
     if (_uart) {
-        log_e("TX Buffer can't be resized when Serial is already running. Set it before calling begin().");
+        log_e("TX Buffer can't be resized when Serial is already running.\n");
         return 0;
     }
 
     if (new_size <= SOC_UART_FIFO_LEN) {
-        log_w("TX Buffer set to minimum value: %d.", SOC_UART_FIFO_LEN);  // ESP32, S2, S3 and C3 means higher than 128
-        _txBufferSize = 0; // it will use just UART FIFO with SOC_UART_FIFO_LEN bytes (128 for most SoC)
-        return SOC_UART_FIFO_LEN;
+        log_e("TX Buffer must be higher than %d.\n", SOC_UART_FIFO_LEN);  // ESP32, S2, S3 and C3 means higher than 128
+        return 0;
     }
-    // if new_size is higher than SOC_UART_FIFO_LEN, TX Ringbuffer will be active and it will be used to report back "availableToWrite()"
+
     _txBufferSize = new_size;
     return _txBufferSize;
 }

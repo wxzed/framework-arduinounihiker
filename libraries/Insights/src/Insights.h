@@ -90,7 +90,7 @@ class ESPInsightsClass
         ESPInsightsClass();
         ~ESPInsightsClass();
         
-        bool begin(const char *auth_key, const char *node_id = NULL, uint32_t log_type = 0xFFFFFFFF, bool alloc_ext_ram = false, bool use_default_transport = true);
+        bool begin(const char *auth_key, const char *node_id = NULL, uint32_t log_type = 0xFFFFFFFF, bool alloc_ext_ram = false);
         void end();
         bool send();
         const char * nodeID();

@@ -27,8 +27,8 @@ protected:
     uint8_t _pdrv;
 
 public:
-    SDFS(FSImplPtr impl);
-    bool begin(uint8_t ssPin=SS, SPIClass &spi=SPI, uint32_t frequency=4000000, const char * mountpoint="/sd", uint8_t max_files=5, bool format_if_empty=false);
+    SDFS(FSImplPtr impl);/*40000000*/
+    bool begin(uint8_t ssPin=SS, SPIClass &spi=SPI1, uint32_t frequency=20000000, const char * mountpoint="/sd", uint8_t max_files=5, bool format_if_empty=false);
     void end();
     sdcard_type_t cardType();
     uint64_t cardSize();

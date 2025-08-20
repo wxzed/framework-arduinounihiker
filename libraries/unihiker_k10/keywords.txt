@@ -1,0 +1,108 @@
+
+#######################################
+# Syntax Map For DFRobot_LTR390UV
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+UNIHIKER_K10	KEYWORD1
+AHT20	KEYWORD1
+
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+initScreen	KEYWORD2
+setScreenBackground	KEYWORD2
+creatCanvas	KEYWORD2
+initBgCamerImage	KEYWORD2
+setBgCamerImage	KEYWORD2
+initSDFile	KEYWORD2
+photoSaveToTFCard	KEYWORD2
+readALS	KEYWORD2
+readUVS	KEYWORD2
+readMICData	KEYWORD2
+getAccelerometerX	KEYWORD2
+getAccelerometerY	KEYWORD2
+getAccelerometerZ	KEYWORD2
+getStrength	KEYWORD2
+isGesture	KEYWORD2
+canvasDrawCode	KEYWORD2
+clearCode	KEYWORD2
+playMusic	KEYWORD2
+playTone	KEYWORD2
+stopPlayTone	KEYWORD2
+playTFCardAudio	KEYWORD2
+stopPlayAudio	KEYWORD2
+recordSaveToTFCard	KEYWORD2
+write	KEYWORD2
+setRangeColor	KEYWORD2
+brightness	KEYWORD2
+isPressed	KEYWORD2
+setPressedCallback	KEYWORD2
+setUnPressedCallback	KEYWORD2
+getData	KEYWORD2
+updateCanvas	KEYWORD2
+canvasClear	KEYWORD2
+canvasDrawBitmap	KEYWORD2
+canvasDrawImage	KEYWORD2
+canvasText	KEYWORD2
+canvasClear	KEYWORD2
+clearLocalCanvas	KEYWORD2
+canvasText	KEYWORD2
+canvasPoint	KEYWORD2
+canvasSetLineWidth	KEYWORD2
+canvasLine	KEYWORD2
+canvasCircle	KEYWORD2
+canvasRectangle	KEYWORD2
+
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+eCNAndENFont24	LITERAL1
+eJapanFont24x24	LITERAL1
+eKoreanFont24x24	LITERAL1
+eGreeceFont12x24	LITERAL1
+eCNAndENFont16	LITERAL1
+eAHT20TempC	LITERAL1
+eAHT20TempF	LITERAL1
+eAHT20HumiRH	LITERAL1
+DADADADUM	LITERAL1
+ENTERTAINER	LITERAL1
+PRELUDE	LITERAL1
+ODE	LITERAL1
+NYAN	LITERAL1
+RINGTONE	LITERAL1
+FUNK	LITERAL1
+BLUES	LITERAL1
+BIRTHDAY	LITERAL1
+WEDDING	LITERAL1
+FUNERAL	LITERAL1
+PUNCHLINE	LITERAL1
+BADDY	LITERAL1
+CHASE	LITERAL1
+BA_DING	LITERAL1
+WAWAWAWAA	LITERAL1
+JUMP_UP	LITERAL1
+JUMP_DOWN	LITERAL1
+POWER_UP	LITERAL1
+POWER_DOWN	LITERAL1
+ScreenUp	LITERAL1
+ScreenDown	LITERAL1
+TiltLeft	LITERAL1
+TiltRight	LITERAL1
+TiltForward	LITERAL1
+TiltBack	LITERAL1
+GestureNone	LITERAL1
+
+

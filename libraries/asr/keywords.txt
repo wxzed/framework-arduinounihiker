@@ -1,0 +1,39 @@
+
+#######################################
+# Syntax Map For DFRobot_LTR390UV
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+ASR	KEYWORD1
+
+
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+asrInit	KEYWORD2
+addASRCommand	KEYWORD2
+isWakeUp	KEYWORD2
+isDetectCmdID	KEYWORD2
+setAsrSpeed	KEYWORD2
+speak	KEYWORD2
+
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+Fast	LITERAL1
+Medium	LITERAL1
+Slow	LITERAL1
+
+
+

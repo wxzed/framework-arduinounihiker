@@ -53,7 +53,6 @@ enum HTTPUpdateResult {
 typedef HTTPUpdateResult t_httpUpdate_return; // backward compatibility
 
 using HTTPUpdateStartCB = std::function<void()>;
-using HTTPUpdateRequestCB = std::function<void(HTTPClient*)>;
 using HTTPUpdateEndCB = std::function<void()>;
 using HTTPUpdateErrorCB = std::function<void(int)>;
 using HTTPUpdateProgressCB = std::function<void(int, int)>;
@@ -85,18 +84,17 @@ public:
         _ledOn = ledOn;
     }
 
-    t_httpUpdate_return update(WiFiClient& client, const String& url, const String& currentVersion = "", HTTPUpdateRequestCB requestCB = NULL);
+    t_httpUpdate_return update(WiFiClient& client, const String& url, const String& currentVersion = "");
 
     t_httpUpdate_return update(WiFiClient& client, const String& host, uint16_t port, const String& uri = "/",
-                               const String& currentVersion = "", HTTPUpdateRequestCB requestCB = NULL);
+                               const String& currentVersion = "");
 
-    t_httpUpdate_return updateSpiffs(WiFiClient& client, const String& url, const String& currentVersion = "", HTTPUpdateRequestCB requestCB = NULL);
+    t_httpUpdate_return updateSpiffs(WiFiClient& client, const String& url, const String& currentVersion = "");
 
     t_httpUpdate_return update(HTTPClient& httpClient,
-                               const String& currentVersion = "", 
-                               HTTPUpdateRequestCB requestCB = NULL);
+                               const String& currentVersion = "");
 
-    t_httpUpdate_return updateSpiffs(HTTPClient &httpClient, const String &currentVersion = "", HTTPUpdateRequestCB requestCB = NULL);
+    t_httpUpdate_return updateSpiffs(HTTPClient &httpClient, const String &currentVersion = "");
 
     // Notification callbacks
     void onStart(HTTPUpdateStartCB cbOnStart)          { _cbStart = cbOnStart; }
@@ -108,7 +106,7 @@ public:
     String getLastErrorString(void);
 
 protected:
-    t_httpUpdate_return handleUpdate(HTTPClient& http, const String& currentVersion, bool spiffs = false, HTTPUpdateRequestCB requestCB = NULL);
+    t_httpUpdate_return handleUpdate(HTTPClient& http, const String& currentVersion, bool spiffs = false);
     bool runUpdate(Stream& in, uint32_t size, String md5, int command = U_FLASH);
 
     // Set the error and potentially use a CB to notify the application

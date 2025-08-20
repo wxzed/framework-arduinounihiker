@@ -838,7 +838,6 @@ int BluetoothSerial::read()
  */
 void BluetoothSerial::setTimeout(int timeoutMS)
 {
-    Stream::setTimeout(timeoutMS);
     this->timeoutTicks=timeoutMS / portTICK_PERIOD_MS;
 }
 

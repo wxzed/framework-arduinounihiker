@@ -72,12 +72,12 @@
         .mem_block_num = buffers,               \
         .flags = 0,                             \
         .rx_config = {                          \
-            .idle_threshold = 0x80,             \
+            .idle_threshold = 10000,            \
             .filter_ticks_thresh = 100,         \
             .filter_en = false,                 \
         }                                       \
     }
-
+//.idle_threshold = 0x80,            \ 原始数据
 
 
 
@@ -325,23 +325,22 @@ bool rmtDeinit(rmt_obj_t *rmt)
         return false;
     }
 
-    int channel = rmt->channel;
-    RMT_MUTEX_LOCK(channel);
+    RMT_MUTEX_LOCK(rmt->channel);
     // force stopping rmt processing
     if (rmt->tx_not_rx) {
-        rmt_tx_stop(channel);
+        rmt_tx_stop(rmt->channel);
     } else {
-        rmt_rx_stop(channel);
+        rmt_rx_stop(rmt->channel);
         if(rmt->rxTaskHandle){
             vTaskDelete(rmt->rxTaskHandle);
             rmt->rxTaskHandle = NULL;
         }       
     }
 
-    rmt_driver_uninstall(channel);
+    rmt_driver_uninstall(rmt->channel);
 
-    size_t from = channel;
-    size_t to = rmt->buffers + channel;
+    size_t from = rmt->channel;
+    size_t to = rmt->buffers + rmt->channel;
     size_t i;
 
     for (i = from; i < to; i++) {
@@ -350,7 +349,7 @@ bool rmtDeinit(rmt_obj_t *rmt)
 
     g_rmt_objects[from].channel = 0;
     g_rmt_objects[from].buffers = 0;
-    RMT_MUTEX_UNLOCK(channel);
+    RMT_MUTEX_UNLOCK(rmt->channel);
 
 #if !CONFIG_DISABLE_HAL_LOCKS
     if(g_rmt_objlocks[from] != NULL) {

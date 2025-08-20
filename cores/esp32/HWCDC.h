@@ -42,10 +42,6 @@ typedef union {
 
 class HWCDC: public Stream
 {
-private:
-    static void deinit();
-    static bool isCDC_Connected();
-
 public:
     HWCDC();
     ~HWCDC();
@@ -68,11 +64,6 @@ public:
     size_t write(const uint8_t *buffer, size_t size);
     void flush(void);
     
-    static bool isPlugged(void);
-    inline static bool isConnected(void)
-    {
-        return isCDC_Connected();
-    }
     inline size_t read(char * buffer, size_t size)
     {
         return read((uint8_t*) buffer, size);

@@ -1,0 +1,57 @@
+
+#######################################
+# Syntax Map For DFRobot_LTR390UV
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+AIRecognition	KEYWORD1
+
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+initAi	KEYWORD2
+switchAiMode	KEYWORD2
+getFaceData	KEYWORD2
+getCatData	KEYWORD2
+isDetectContent	KEYWORD2
+sendFaceCmd	KEYWORD2
+setMotinoThreshold	KEYWORD2
+getQrCodeContent	KEYWORD2
+getRecognitionID	KEYWORD2
+isRecognized	KEYWORD2
+
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+Face	LITERAL1
+Cat	LITERAL1
+Move	LITERAL1
+Code	LITERAL1
+NoMode	LITERAL1
+Length	LITERAL1
+Width	LITERAL1
+CenterX	LITERAL1
+CenterY	LITERAL1
+LeftEyeX	LITERAL1
+LeftEyeY	LITERAL1
+RightEyeX	LITERAL1
+RightEyeY	LITERAL1
+NoseX	LITERAL1
+NoseY	LITERAL1
+LeftMouthX	LITERAL1
+LeftMouthY	LITERAL1
+RightMouthX	LITERAL1
+RightMouthY	LITERAL1
+
+

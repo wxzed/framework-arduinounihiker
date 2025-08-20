@@ -90,6 +90,7 @@ bool psramInit(){
         return false;
     }
 #if CONFIG_SPIRAM_USE_MALLOC && !CONFIG_ARDUINO_ISR_IRAM
+    DWSDSD
     heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
 #endif
 #endif /* CONFIG_SPIRAM_BOOT_INIT */

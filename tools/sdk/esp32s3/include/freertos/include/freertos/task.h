@@ -218,17 +218,19 @@ typedef enum
  * @endcond
  * \ingroup SchedulerControl
  */
+
+
 #ifdef ESP_PLATFORM
 #define taskENTER_CRITICAL( x )   portENTER_CRITICAL( x )
 #else
-#define taskENTER_CRITICAL( )     portENTER_CRITICAL( )
+#define taskENTER_CRITICAL()     portENTER_CRITICAL()
 #endif //  ESP_PLATFORM
 #define taskENTER_CRITICAL_FROM_ISR( ) portSET_INTERRUPT_MASK_FROM_ISR()
 
 #ifdef ESP_PLATFORM
 #define taskENTER_CRITICAL_ISR( x )   portENTER_CRITICAL_ISR( x )
 #else
-#define taskENTER_CRITICAL_ISR( )     portENTER_CRITICAL_ISR( )
+#define taskENTER_CRITICAL_ISR()     portENTER_CRITICAL_ISR()
 #endif //  ESP_PLATFORM
 
 /**

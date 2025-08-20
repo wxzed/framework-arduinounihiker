@@ -49,6 +49,7 @@ void loopTask(void *pvParameters)
         }
         loop();
         if (serialEventRun) serialEventRun();
+        vTaskDelay(1);
     }
 }
 
@@ -68,7 +69,7 @@ extern "C" void app_main()
 #endif
     loopTaskWDTEnabled = false;
     initArduino();
-    xTaskCreateUniversal(loopTask, "loopTask", getArduinoLoopTaskStackSize(), NULL, 1, &loopTaskHandle, ARDUINO_RUNNING_CORE);
+    xTaskCreateUniversal(loopTask, "loopTask", getArduinoLoopTaskStackSize(), NULL, 1, &loopTaskHandle, ARDUINO_RUNNING_CORE);//1
 }
 
 #endif

@@ -27,7 +27,7 @@
 #define portNUM_PROCESSORS                              1
 #endif
 
-#define portUSING_MPU_WRAPPERS                          0
+#define portUSING_MPU_WRAPPERS                          0//修改为1 默认为0
 #define configUSE_MUTEX                                 1
 
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS

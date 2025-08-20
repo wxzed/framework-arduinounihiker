@@ -51,7 +51,6 @@ public:
 
     IPAddress softAPBroadcastIP();
     IPAddress softAPNetworkID();
-    IPAddress softAPSubnetMask();
     uint8_t softAPSubnetCIDR();
 
     bool softAPenableIpV6();
