@@ -154,6 +154,59 @@ def add_tinyuf2_extra_image():
     )
 
 
+def add_model_files():
+    """Add model files based on -DModel flag in build_flags"""
+    # Get build flags and look for -DModel parameter
+    build_flags = env.get("BUILD_FLAGS", [])
+    model_type = None
+    
+    # Parse build flags to find -DModel parameter
+    for flag in build_flags:
+        if flag.startswith("-DModel="):
+            model_type = flag.split("=", 1)[1]
+            break
+    
+    # If no Model parameter or Model=None, don't add any model files
+    if not model_type or model_type == "None":
+        print("No model files will be flashed (Model=None or not specified)")
+        return
+    
+    # Define model configurations based on model type
+    model_configs = {
+        "CN": [
+            ("0x510000", "tools/partitions/srmodels.bin"),
+            ("0x985000", "tools/partitions/esp_tts_voice_data_xiaoxin.dat")
+        ],
+        "EN": [
+            ("0x510000", "tools/partitions/srmodels4.bin"),
+            ("0x985000", "tools/partitions/esp_tts_voice_data_xiaoxin.dat")
+        ]
+    }
+    
+    # Get the model configuration for the specified type
+    if model_type not in model_configs:
+        print("Warning! Unknown model type: %s. Supported types: %s" % (model_type, ", ".join(model_configs.keys())))
+        return
+    
+    model_files = model_configs[model_type]
+    print("Adding model files for type: %s" % model_type)
+    
+    # Add each model file
+    for offset, file_path in model_files:
+        full_path = join(FRAMEWORK_DIR, file_path)
+        
+        # Check if file exists
+        if isfile(env.subst(full_path)):
+            print("Adding model file: %s at offset %s" % (file_path, offset))
+            env.Append(
+                FLASH_EXTRA_IMAGES=[
+                    (offset, full_path),
+                ]
+            )
+        else:
+            print("Warning! Model file `%s` doesn't exist" % full_path)
+
+
 #
 # Run target-specific script to populate the environment with proper build flags
 #
@@ -214,6 +267,9 @@ env.Append(
         for offset, img in board_config.get("upload.arduino.flash_extra_images", [])
     ],
 )
+
+# Add model files based on build.Model configuration
+add_model_files()
 
 # Add an extra UF2 image if the 'TinyUF2' partition is selected
 if partitions_name.endswith("tinyuf2.csv") or board_config.get(
